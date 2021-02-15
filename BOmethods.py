@@ -49,6 +49,7 @@ class Gaussian(BO_Optimize):
         iteration: number of iterations
         n_sample: number of samples per iteration
         """
+        lam = math.ceil(n_sample/3)
         print("gaussian")
         optimal_results = [] #best result per iteration
         optimal_variables = [] #best variables per iteration
@@ -59,18 +60,23 @@ class Gaussian(BO_Optimize):
         stds = [(self.ranges[n][1]-self.ranges[n][0])/4 for n in range(self.ndim)]
 
         for it in range(iteration):
+            ranks = []
             for sample in range(n_sample): #for each samples
                 X = [np.random.normal(loc=means[n], scale=stds[n], size=1) for n in range(self.ndim)]
                 #modify range
-                X = [min(max(self.ranges[i][0],x), min(self.ranges[i][1], x)) for i,x in enumerate(X)]
+                X = [min(max(self.ranges[i][0],x.item()), min(self.ranges[i][1], x.item())) for i,x in enumerate(X)]
                 output = self.target_obj.calc(X)
-
+                ranks.append([output, X])
                 if output < cur_results:
                     cur_results = output
                     cur_variables = X
 
             #update heuristics
-            means = cur_variables
+            ranks.sort(key=lambda x: x[0])
+            nextMeans = []
+            for _, x in ranks[:lam]:
+                nextMeans.append(x)
+            means = np.mean(nextMeans, 0) #mean
 
             #save transtion
             optimal_results.append(cur_results)
