@@ -6,6 +6,13 @@ from copy import copy
 def uniform_random(low, high):
     return low + np.random.rand()*(high-low+0.1) #because rand() is defined [0, 1)
 
+def modify(low, val, high):
+    if val < low:
+        val = low
+    if val > high:
+        val = high
+    return val
+
 class BO_Optimize:
     def __init__(self, target, ndim, ranges):
         """
@@ -49,7 +56,7 @@ class Gaussian(BO_Optimize):
         iteration: number of iterations
         n_sample: number of samples per iteration
         """
-        lam = math.ceil(n_sample/3)
+        lam = math.ceil(0.2*n_sample)
         print("gaussian")
         optimal_results = [] #best result per iteration
         optimal_variables = [] #best variables per iteration
@@ -64,7 +71,7 @@ class Gaussian(BO_Optimize):
             for sample in range(n_sample): #for each samples
                 X = [np.random.normal(loc=means[n], scale=stds[n], size=1) for n in range(self.ndim)]
                 #modify range
-                X = [min(max(self.ranges[i][0],x.item()), min(self.ranges[i][1], x.item())) for i,x in enumerate(X)]
+                X = [modify(self.ranges[i][0], x.item(), self.ranges[i][1]) for i,x in enumerate(X)]
                 output = self.target_obj.calc(X)
                 ranks.append([output, X])
                 if output < cur_results:
@@ -89,10 +96,7 @@ class SimAnneal(BO_Optimize):
         #X', X
         q1 = np.array([np.random.normal(loc=mean[n], scale=std[n], size=1) for n in range(self.ndim)]) #x'
         q2 = np.array([np.random.normal(loc=X[n], scale=std[n], size=1) for n in range(self.ndim)]) #x
-
         denominator = np.sum(np.exp(-self.target_obj.calc(mean)/T)*q1) #check 0 division
-        if denominator == 0:
-            return 1
 
         prob = np.sum(np.exp(-self.target_obj.calc(X)/T)*q2)/ denominator
 
@@ -107,14 +111,14 @@ class SimAnneal(BO_Optimize):
 
 
         means = [uniform_random(self.ranges[n][0], self.ranges[n][1]) for n in range(self.ndim)]
-        means = [min(max(self.ranges[i][0],x), min(self.ranges[i][1], x)) for i,x in enumerate(means)] #modify range
+        means = [modify(self.ranges[i][0], x, self.ranges[i][1]) for i,x in enumerate(means)] #modify range
         stds = [(self.ranges[n][1]-self.ranges[n][0])/10 for n in range(self.ndim)]
 
         step_size = (T-min_T)/iteration #step size for decrease temperature
 
         for it in range(iteration):
             X = [np.random.normal(loc=means[n], scale=stds[n]) for n in range(self.ndim)] #X'
-            X = [min(max(self.ranges[i][0],x), min(self.ranges[i][1], x)) for i,x in enumerate(X)] #modify
+            X = [modify(self.ranges[i][0], x, self.ranges[i][1]) for i,x in enumerate(X)] #modify
 
             acceptance_prob = self.__anneal(X, means, stds, T)
             if np.random.random() < acceptance_prob:
@@ -203,7 +207,7 @@ class WOA(BO_Optimize):
                 cur_X.append(cur) #next search agent
 
             #amend positions
-            cur_X = [ np.array([min(max(self.ranges[i][0],x), min(self.ranges[i][1], x)) for i,x in enumerate(cur_X[n])]) for n in range(population)]
+            cur_X = [ np.array([modify(self.ranges[i][0], x, self.ranges[i][1]) for i,x in enumerate(cur_X[n])]) for n in range(population)]
 
             cur_val, bestX = self.__optimal_fittness(cur_X) #fitness of each agent
 
@@ -251,7 +255,7 @@ class PSO(BO_Optimize):
                 nv = w*v + c1*np.random.rand()*(p_variable - x) + c2*np.random.rand()*(opt_variable - x)
                 nx = x+v
 
-                nx = [min(max(self.ranges[i][0],d), min(self.ranges[i][1], d)) for i,d in enumerate(nx)] #modify ranges
+                nx = [modify(self.ranges[i][0], d, self.ranges[i][1]) for i,d in enumerate(nx)] #modify ranges
                 nextX.append(nx)
                 nextV.append(nv)
 
