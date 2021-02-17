@@ -7,11 +7,10 @@ Implementing some blackbox optimization methods
 3. black_box_optimize.ipynb: notebook for visualization
 
 ## Implemented optimization method
-1. random search
+1. Random search
 2. Gaussian search
-3. Simulated annealing
-4. Whale Optimization Algorithm (WOA)
-5. Particle Swam Optimization (PSO)
+3. Whale Optimization Algorithm (WOA)
+3. Particle Swam Optimization (PSO)
 
 ## Usage
 In each test function, needs definition of dimensions of inputs variables.
@@ -42,4 +41,4 @@ Once you can create an optimization object, then conduct optimization by .fit() 
 In the above case, PSO is conducted with 1000 iteration and, in each iteration, 10 search agents are evaluated.
 And the found value and variables are returned as a list format  (obtain these values per iteration).
 
-For additional example, please see the notebook.
+For additional examples, please see the notebook.

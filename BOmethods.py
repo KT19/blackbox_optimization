@@ -91,49 +91,6 @@ class Gaussian(BO_Optimize):
 
         return optimal_results, optimal_variables
 
-class SimAnneal(BO_Optimize):
-    def __anneal(self, X, mean, std, T):
-        #X', X
-        q1 = np.array([np.random.normal(loc=mean[n], scale=std[n], size=1) for n in range(self.ndim)]) #x'
-        q2 = np.array([np.random.normal(loc=X[n], scale=std[n], size=1) for n in range(self.ndim)]) #x
-        denominator = np.sum(np.exp(-self.target_obj.calc(mean)/T)*q1) #check 0 division
-
-        prob = np.sum(np.exp(-self.target_obj.calc(X)/T)*q2)/ denominator
-
-        return min(1, prob)
-
-    def fit(self, iteration, T, min_T):
-        print("Simulated Annealing")
-        optimal_results = [] #best result per iteration
-        optimal_variables = [] #best variables per iteration
-        cur_results= 1e9 #current best results
-        cur_variables = [] #current best variables
-
-
-        means = [uniform_random(self.ranges[n][0], self.ranges[n][1]) for n in range(self.ndim)]
-        means = [modify(self.ranges[i][0], x, self.ranges[i][1]) for i,x in enumerate(means)] #modify range
-        stds = [(self.ranges[n][1]-self.ranges[n][0])/10 for n in range(self.ndim)]
-
-        step_size = (T-min_T)/iteration #step size for decrease temperature
-
-        for it in range(iteration):
-            X = [np.random.normal(loc=means[n], scale=stds[n]) for n in range(self.ndim)] #X'
-            X = [modify(self.ranges[i][0], x, self.ranges[i][1]) for i,x in enumerate(X)] #modify
-
-            acceptance_prob = self.__anneal(X, means, stds, T)
-            if np.random.random() < acceptance_prob:
-                means = copy(X)
-
-            T -= step_size
-            res = self.target_obj.calc(means)
-            if res < cur_results:
-                cur_results = res
-                cur_variables = copy(means)
-
-            optimal_results.append(cur_results)
-            optimal_variables.append(cur_variables)
-
-        return optimal_results, optimal_variables
 
 class WOA(BO_Optimize):
     def __update_params(self, itr_ratio):
